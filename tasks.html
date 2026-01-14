@@ -1,0 +1,27 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<link rel="stylesheet" href="style.css"></head><body>
+<h2>Görevler</h2>
+<input id="t"><input id="u"><button onclick="add()">Ekle</button>
+<table><tbody id="rows"></tbody></table>
+<script>
+function load(){fetch("/tasks").then(r=>r.json()).then(d=>{
+ rows.innerHTML="";
+ d.forEach((x,i)=>{
+  let tr=document.createElement("tr"); tr.dataset.id=x.id; tr.className=x.status;
+  tr.innerHTML=`<td>${x.title}</td><td><select onchange="save(${x.id},this.value)">
+  <option ${x.status=="beklemede"?"selected":""}>beklemede</option>
+  <option ${x.status=="calisiliyor"?"selected":""}>calisiliyor</option>
+  <option ${x.status=="tamamlandi"?"selected":""}>tamamlandi</option>
+  </select></td>`;
+  rows.appendChild(tr);
+ });
+ new Sortable(rows,{onEnd:()=>{
+  let o=[];document.querySelectorAll("tr").forEach((tr,i)=>o.push({id:tr.dataset.id,priority:i+1}));
+  fetch("/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order:o})});
+ }});
+});}
+function add(){fetch("/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:t.value,user:u.value})}).then(load);}
+function save(id,s){fetch("/tasks/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:s})});}
+load();
+</script></body></html>
